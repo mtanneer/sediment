@@ -1,6 +1,6 @@
 {
   "name": "sediment",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mines friction out of past Claude Code sessions and suggests CLAUDE.md diffs",
   "license": "MIT",
   "dependencies": [

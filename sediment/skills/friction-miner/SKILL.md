@@ -116,7 +116,12 @@ developing Sediment itself review a run afterward.
 
    `heuristic_filter.py` accepts either shape (archive `.json`, wrapped
    under `turns`, or raw `.jsonl`, one turn per line) and picks based on
-   file extension.
+   file extension. For an archive with a `subagents` array
+   (`schema_version` 2+), it scans each subagent's own turns in addition
+   to the main transcript - so corrections/rules stated to a delegated
+   agent are caught too, not just ones in the main conversation. Each
+   candidate carries an `agent_id` field (`null` for the main session,
+   the subagent's id otherwise).
 
    Matches patterns from `${CLAUDE_SKILL_DIR}/references/friction-patterns.md`
    (correction phrases, explicit rules, repeated questions - all gated by
@@ -149,8 +154,8 @@ developing Sediment itself review a run afterward.
 
    Do not write ad-hoc Python (`python3 -c`, scratch scripts) to inspect
    or filter candidate JSON - `heuristic_filter.py`'s output is
-   already the exact shape the judge needs (`kind`, `text`, `context`).
-   Pipe it to the judge directly.
+   already the exact shape the judge needs (`kind`, `text`, `context`,
+   `agent_id`). Pipe it to the judge directly.
 
 4. **Cluster**
    ```

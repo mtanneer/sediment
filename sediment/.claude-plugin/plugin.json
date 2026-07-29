@@ -2,6 +2,7 @@
   "name": "sediment",
   "version": "0.1.0",
   "description": "Mines friction out of past Claude Code sessions and suggests CLAUDE.md diffs",
+  "license": "MIT",
   "dependencies": [
     { "name": "session-archiver", "marketplace": "claude-session-db", "version": "^1.0.0" }
   ]

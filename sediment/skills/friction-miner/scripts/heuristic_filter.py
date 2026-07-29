@@ -10,6 +10,7 @@ assistant turns).
 
 Pure local processing - no network calls.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -104,16 +105,22 @@ def find_candidates(turns: list[dict]) -> list[dict]:
             elif correction_re.search(text):
                 kind = "correction"
             if kind:
-                lo, hi = max(0, i - CONTEXT_TURNS), min(len(turns), i + CONTEXT_TURNS + 1)
-                candidates.append({
-                    "kind": kind,
-                    "turn_index": i,
-                    "text": text,
-                    "context": turns[lo:hi],
-                })
+                lo, hi = (
+                    max(0, i - CONTEXT_TURNS),
+                    min(len(turns), i + CONTEXT_TURNS + 1),
+                )
+                candidates.append(
+                    {
+                        "kind": kind,
+                        "turn_index": i,
+                        "text": text,
+                        "context": turns[lo:hi],
+                    }
+                )
 
     assistant_questions = [
-        (i, text) for i, t in enumerate(turns)
+        (i, text)
+        for i, t in enumerate(turns)
         if _role_of(t) == "assistant" and (text := _text_of(t)).strip().endswith("?")
     ]
     for a in range(len(assistant_questions)):
@@ -121,27 +128,39 @@ def find_candidates(turns: list[dict]) -> list[dict]:
             i1, t1 = assistant_questions[a]
             i2, t2 = assistant_questions[b]
             if difflib.SequenceMatcher(None, t1, t2).ratio() > SIMILARITY_THRESHOLD:
-                lo, hi = max(0, i1 - CONTEXT_TURNS), min(len(turns), i2 + CONTEXT_TURNS + 1)
-                candidates.append({
-                    "kind": "repeated_question",
-                    "turn_index": i1,
-                    "text": t1,
-                    "context": turns[lo:hi],
-                })
+                lo, hi = (
+                    max(0, i1 - CONTEXT_TURNS),
+                    min(len(turns), i2 + CONTEXT_TURNS + 1),
+                )
+                candidates.append(
+                    {
+                        "kind": "repeated_question",
+                        "turn_index": i1,
+                        "text": t1,
+                        "context": turns[lo:hi],
+                    }
+                )
 
     return candidates
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("session", type=Path, help="Path to a session archive (.json) or raw transcript (.jsonl)")
+    parser.add_argument(
+        "session",
+        type=Path,
+        help="Path to a session archive (.json) or raw transcript (.jsonl)",
+    )
     args = parser.parse_args()
 
     if not args.session.exists():
         # history.jsonl (per-prompt log, never pruned) can reference session
         # ids whose archive/transcript file doesn't exist yet or was pruned
         # before session-archiver's backfill ran - this is routine, not an error.
-        print(f"skipping {args.session}: archive/transcript file not found", file=sys.stderr)
+        print(
+            f"skipping {args.session}: archive/transcript file not found",
+            file=sys.stderr,
+        )
         print(json.dumps([]))
         return
 
@@ -155,16 +174,42 @@ def _self_check() -> None:
 
     fixture = [
         {"message": {"role": "user", "content": "add a login button"}},
-        {"message": {"role": "assistant", "content": [{"type": "text", "text": "Added it."}]}},
-        {"message": {"role": "user", "content": "no, actually put it in the navbar, not the footer"}},
-        {"message": {"role": "assistant", "content": [{"type": "text", "text": "Moved to navbar."}]}},
-        {"message": {"role": "user", "content": "always run tests before committing from now on"}},
         {
-            "message": {"role": "user", "content": "Stop hook feedback:\n\nalways run lint checks in this order, never skip ahead"},
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "Added it."}],
+            }
+        },
+        {
+            "message": {
+                "role": "user",
+                "content": "no, actually put it in the navbar, not the footer",
+            }
+        },
+        {
+            "message": {
+                "role": "assistant",
+                "content": [{"type": "text", "text": "Moved to navbar."}],
+            }
+        },
+        {
+            "message": {
+                "role": "user",
+                "content": "always run tests before committing from now on",
+            }
+        },
+        {
+            "message": {
+                "role": "user",
+                "content": "Stop hook feedback:\n\nalways run lint checks in this order, never skip ahead",
+            },
             "isMeta": True,
         },
         {
-            "message": {"role": "user", "content": "always rebuild the cache from now on"},
+            "message": {
+                "role": "user",
+                "content": "always rebuild the cache from now on",
+            },
             "origin": {"kind": "hook"},
         },
     ]
@@ -180,7 +225,9 @@ def _self_check() -> None:
     kinds = {c["kind"] for c in candidates}
     assert "correction" in kinds, candidates
     assert "explicit_rule" in kinds, candidates
-    assert not any("lint checks in this order" in c["text"] for c in candidates), candidates
+    assert not any("lint checks in this order" in c["text"] for c in candidates), (
+        candidates
+    )
     assert not any("rebuild the cache" in c["text"] for c in candidates), candidates
     print("heuristic_filter self-check OK", file=sys.stderr)
 

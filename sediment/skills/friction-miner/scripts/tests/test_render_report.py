@@ -8,7 +8,12 @@ from render_report import render
 
 def test_global_section_renders_with_seen_in_list():
     clustered = {
-        "global": [{"rule": "Always activate venv first", "projects": ["/repo/a", "/repo/b", "/repo/c"]}],
+        "global": [
+            {
+                "rule": "Always activate venv first",
+                "projects": ["/repo/a", "/repo/b", "/repo/c"],
+            }
+        ],
         "local": {},
     }
     out = render(clustered)
@@ -26,7 +31,12 @@ def test_local_section_renders_grouped_per_project():
 
 def test_both_global_and_local_present():
     clustered = {
-        "global": [{"rule": "Always activate venv first", "projects": ["/repo/a", "/repo/b", "/repo/c"]}],
+        "global": [
+            {
+                "rule": "Always activate venv first",
+                "projects": ["/repo/a", "/repo/b", "/repo/c"],
+            }
+        ],
         "local": {"/repo/svdoc": ["Use pyslang for parsing"]},
     }
     out = render(clustered)

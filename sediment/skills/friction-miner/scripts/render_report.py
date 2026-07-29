@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Render the clustered friction output (from cluster_friction.py) as a
 plain-text diff-style report."""
+
 import argparse
 import json
 import sys
@@ -32,7 +33,9 @@ def render(clustered: dict) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("clustered_json", type=Path, help="Path to cluster_friction.py output")
+    parser.add_argument(
+        "clustered_json", type=Path, help="Path to cluster_friction.py output"
+    )
     args = parser.parse_args()
 
     clustered = json.loads(args.clustered_json.read_text())
@@ -41,9 +44,21 @@ def main() -> None:
 
 def _self_check() -> None:
     clustered = {
-        "global": [{"rule": "Always activate venv before running Python commands",
-                     "projects": ["/repo/svdoc", "/repo/rental-autopilot", "/repo/home-ai-agent"]}],
-        "local": {"/repo/svdoc": ["Use pyslang, not a hand-rolled parser, for SystemVerilog tokenization"]},
+        "global": [
+            {
+                "rule": "Always activate venv before running Python commands",
+                "projects": [
+                    "/repo/svdoc",
+                    "/repo/rental-autopilot",
+                    "/repo/home-ai-agent",
+                ],
+            }
+        ],
+        "local": {
+            "/repo/svdoc": [
+                "Use pyslang, not a hand-rolled parser, for SystemVerilog tokenization"
+            ]
+        },
     }
     out = render(clustered)
     assert "=== GLOBAL suggestions" in out, out

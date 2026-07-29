@@ -5,6 +5,7 @@ Uses history.jsonl as the authoritative index rather than decoding
 ~/.claude/projects/<encoded-path>/ folder names, which is lossy (hyphenated
 directories collide - anthropics/claude-code#7009, #21085).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -24,8 +25,12 @@ def discover(history_path: Path) -> dict[str, list[str]]:
             if not line:
                 continue
             entry = json.loads(line)
-            project = entry.get("project") or entry.get("cwd") or entry.get("project_path")
-            session_id = entry.get("session_id") or entry.get("sessionId") or entry.get("id")
+            project = (
+                entry.get("project") or entry.get("cwd") or entry.get("project_path")
+            )
+            session_id = (
+                entry.get("session_id") or entry.get("sessionId") or entry.get("id")
+            )
             if project and session_id and session_id not in projects[project]:
                 projects[project].append(session_id)
     return dict(projects)
@@ -46,10 +51,12 @@ def main() -> None:
     if args.project:
         projects = {k: v for k, v in projects.items() if args.project in k}
 
-    print(json.dumps(
-        [{"project_path": p, "session_ids": ids} for p, ids in projects.items()],
-        indent=2,
-    ))
+    print(
+        json.dumps(
+            [{"project_path": p, "session_ids": ids} for p, ids in projects.items()],
+            indent=2,
+        )
+    )
 
 
 def _self_check() -> None:
@@ -59,7 +66,10 @@ def _self_check() -> None:
         {"project": "/repo/a", "session_id": "s1"},
         {"project": "/repo/a", "session_id": "s2"},
         {"project": "/repo/b", "session_id": "s3"},
-        {"project": "/repo/a", "session_id": "s1"},  # duplicate, should not double-count
+        {
+            "project": "/repo/a",
+            "session_id": "s1",
+        },  # duplicate, should not double-count
     ]
     with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
         for entry in fixture:

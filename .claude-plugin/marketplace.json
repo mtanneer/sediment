@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "sediment-dev",
+  "description": "Local dev marketplace for testing the sediment plugin before publishing",
+  "owner": {
+    "name": "mtanneer"
+  },
+  "allowCrossMarketplaceDependenciesOn": ["claude-session-db"],
+  "plugins": [
+    {
+      "name": "sediment",
+      "description": "Mines friction out of past Claude Code sessions and suggests CLAUDE.md diffs",
+      "source": "./sediment",
+      "category": "productivity"
+    }
+  ]
+}

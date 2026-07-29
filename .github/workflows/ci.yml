@@ -32,7 +32,7 @@ jobs:
           fi
 
           changed=$(git diff --name-only origin/main...HEAD)
-          shippable=$(echo "$changed" | grep -vE '\.md$|^\.github/|^ruff\.toml$')
+          shippable=$(echo "$changed" | grep -vE '\.md$|^\.github/|^ruff\.toml$' || true)
           if [ -z "$shippable" ]; then
             echo "No shippable files changed (docs/CI/tooling only), version bump not required."
             exit 0

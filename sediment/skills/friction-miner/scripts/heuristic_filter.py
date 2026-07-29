@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Scan a session for friction candidates. Accepts a session-archiver
 archive file (~/.claude-archive/<project>/<session-id>.json) or, as a
-fallback, a raw transcript (.jsonl).
+fallback, a raw transcript (.jsonl). Archive files with a "subagents"
+array (schema_version 2+) are scanned per-agent as well as the main
+transcript; each candidate is tagged with its source "agent_id" (None
+for the main session).
 
 Matches patterns documented in references/friction-patterns.md:
 correction phrases, explicit rule statements (user-authored turns only -
@@ -75,11 +78,20 @@ def _is_human_turn(turn: dict) -> bool:
     return True
 
 
-def load_turns(session_path: Path) -> list[dict]:
+def load_transcripts(session_path: Path) -> list[tuple[str | None, list[dict]]]:
     """Read turns from either a raw transcript (.jsonl, line-per-turn) or a
-    session-archiver archive file (.json, turns wrapped under "turns")."""
+    session-archiver archive file (.json, turns wrapped under "turns").
+
+    Returns a list of (agent_id, turns) pairs: the main session first
+    (agent_id None), followed by one entry per subagent run (schema_version
+    2+ archives only - subagents get their own turn indices/context windows
+    rather than being flattened into the main transcript)."""
     if session_path.suffix == ".json":
-        return json.loads(session_path.read_text()).get("turns", [])
+        archive = json.loads(session_path.read_text())
+        transcripts = [(None, archive.get("turns", []))]
+        for subagent in archive.get("subagents", []):
+            transcripts.append((subagent.get("agent_id"), subagent.get("turns", [])))
+        return transcripts
 
     turns = []
     with session_path.open() as f:
@@ -87,7 +99,7 @@ def load_turns(session_path: Path) -> list[dict]:
             line = line.strip()
             if line:
                 turns.append(json.loads(line))
-    return turns
+    return [(None, turns)]
 
 
 def find_candidates(turns: list[dict]) -> list[dict]:
@@ -164,8 +176,11 @@ def main() -> None:
         print(json.dumps([]))
         return
 
-    turns = load_turns(args.session)
-    candidates = find_candidates(turns)
+    candidates = []
+    for agent_id, turns in load_transcripts(args.session):
+        for candidate in find_candidates(turns):
+            candidate["agent_id"] = agent_id
+            candidates.append(candidate)
     print(json.dumps(candidates, indent=2))
 
 
@@ -218,7 +233,7 @@ def _self_check() -> None:
             f.write(json.dumps(entry) + "\n")
         path = Path(f.name)
 
-    turns = load_turns(path)
+    turns = load_transcripts(path)[0][1]
     path.unlink()
     candidates = find_candidates(turns)
 

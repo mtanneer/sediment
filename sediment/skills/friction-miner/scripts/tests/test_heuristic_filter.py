@@ -1,10 +1,11 @@
+import json
 import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from heuristic_filter import find_candidates
+from heuristic_filter import find_candidates, load_transcripts
 
 SCRIPT_PATH = Path(__file__).resolve().parent.parent / "heuristic_filter.py"
 
@@ -122,6 +123,65 @@ def test_context_window_clipped_at_transcript_start():
     assert len(candidates) == 1
     # no turns before index 0, so context is just turns[0:3]
     assert len(candidates[0]["context"]) == 2
+
+
+def test_load_transcripts_jsonl_returns_single_main_transcript(tmp_path):
+    path = tmp_path / "session.jsonl"
+    path.write_text(json.dumps(_user_turn("turn 0")) + "\n")
+    transcripts = load_transcripts(path)
+    assert len(transcripts) == 1
+    assert transcripts[0][0] is None
+    assert len(transcripts[0][1]) == 1
+
+
+def test_load_transcripts_v1_archive_has_no_subagents(tmp_path):
+    path = tmp_path / "session.json"
+    path.write_text(json.dumps({"schema_version": 1, "turns": [_user_turn("hi")]}))
+    transcripts = load_transcripts(path)
+    assert len(transcripts) == 1
+    assert transcripts[0][0] is None
+
+
+def test_load_transcripts_v2_archive_includes_subagents(tmp_path):
+    archive = {
+        "schema_version": 2,
+        "turns": [_user_turn("main turn")],
+        "subagents": [
+            {
+                "agent_id": "abc123",
+                "turns": [_user_turn("always run tests from now on")],
+            }
+        ],
+    }
+    path = tmp_path / "session.json"
+    path.write_text(json.dumps(archive))
+    transcripts = load_transcripts(path)
+    assert [agent_id for agent_id, _ in transcripts] == [None, "abc123"]
+    assert transcripts[1][1] == archive["subagents"][0]["turns"]
+
+
+def test_cli_tags_candidates_with_agent_id(tmp_path):
+    archive = {
+        "schema_version": 2,
+        "turns": [_user_turn("add a login button")],
+        "subagents": [
+            {
+                "agent_id": "abc123",
+                "turns": [_user_turn("never skip the lint step")],
+            }
+        ],
+    }
+    path = tmp_path / "session.json"
+    path.write_text(json.dumps(archive))
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT_PATH), str(path)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0
+    candidates = json.loads(result.stdout)
+    assert len(candidates) == 1
+    assert candidates[0]["agent_id"] == "abc123"
 
 
 def test_cli_missing_session_file_does_not_crash(tmp_path):

@@ -16,7 +16,9 @@ def _user_turn(text, **extra):
 
 
 def _assistant_turn(text):
-    return {"message": {"role": "assistant", "content": [{"type": "text", "text": text}]}}
+    return {
+        "message": {"role": "assistant", "content": [{"type": "text", "text": text}]}
+    }
 
 
 def test_correction_pattern_on_human_turn_is_detected():
@@ -39,12 +41,16 @@ def test_turn_matching_neither_pattern_produces_nothing():
 
 
 def test_ismeta_turn_is_rejected_even_with_rule_shaped_text():
-    turns = [_user_turn("Stop hook feedback:\n\nalways run checks in order", isMeta=True)]
+    turns = [
+        _user_turn("Stop hook feedback:\n\nalways run checks in order", isMeta=True)
+    ]
     assert find_candidates(turns) == []
 
 
 def test_attribution_skill_turn_is_rejected():
-    turns = [_user_turn("always rebuild the cache", attributionSkill="ralph-loop:ralph-loop")]
+    turns = [
+        _user_turn("always rebuild the cache", attributionSkill="ralph-loop:ralph-loop")
+    ]
     assert find_candidates(turns) == []
 
 
@@ -125,7 +131,8 @@ def test_cli_missing_session_file_does_not_crash(tmp_path):
     missing = tmp_path / "does-not-exist.jsonl"
     result = subprocess.run(
         [sys.executable, str(SCRIPT_PATH), str(missing)],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
     assert result.stdout.strip() == "[]"

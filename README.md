@@ -1,5 +1,7 @@
 # Sediment
 
+![version](https://img.shields.io/badge/dynamic/json?url=https://raw.githubusercontent.com/mtanneer/sediment/main/sediment/.claude-plugin/plugin.json&query=%24.version&label=version)
+
 A Claude Code plugin that mines friction — corrections, repeated
 preferences — out of your past Claude Code sessions across *all*
 projects, and suggests CLAUDE.md diffs. Report-first, apply per-rule with
@@ -10,6 +12,24 @@ calls.
 Named for what settles out after the fact: the useful residue of
 corrections and repeated preferences a session leaves behind, once you
 filter out the noise.
+
+## Install
+
+Sediment depends on
+[**session-archiver**](https://github.com/mtanneer/claude-session-db), a
+separate plugin/marketplace that archives session transcripts into a
+durable local store outside Claude Code's own 30-day retention. Add both
+marketplaces — Claude Code auto-installs the dependency once both are
+known:
+
+```
+/plugin marketplace add mtanneer/claude-session-db
+/plugin marketplace add mtanneer/sediment
+/plugin install sediment
+```
+
+If you skip the first `marketplace add`, install fails with "Dependency
+session-archiver is not installed" — just run it and retry.
 
 ## Why
 
@@ -30,24 +50,6 @@ asks before writing it.
 === svdoc ===
 + Use pyslang, not a hand-rolled parser, for SystemVerilog tokenization
 ```
-
-## Install
-
-Sediment depends on
-[**session-archiver**](https://github.com/mtanneer/claude-session-db), a
-separate plugin/marketplace that archives session transcripts into a
-durable local store outside Claude Code's own 30-day retention. Add both
-marketplaces — Claude Code auto-installs the dependency once both are
-known:
-
-```
-/plugin marketplace add mtanneer/claude-session-db
-/plugin marketplace add mtanneer/sediment
-/plugin install sediment
-```
-
-If you skip the first `marketplace add`, install fails with "Dependency
-session-archiver is not installed" — just run it and retry.
 
 ## Usage
 
@@ -83,7 +85,7 @@ for.
    a `# Sediment suggestions` heading. Nothing is written without your
    say-so.
 
-## Important: run this interactively
+## Running interactively
 
 Sediment must run inside a live, interactive Claude Code session so its
 model calls draw on your existing Pro/Max subscription. The judgment pass
@@ -113,20 +115,8 @@ developing Sediment itself, not an end-user feature.
 
 ## Development
 
-The 4 pipeline scripts (`discover_sessions.py`, `heuristic_filter.py`,
-`cluster_friction.py`, `render_report.py`) are pure logic with a pytest
-suite, headless, no live session required:
-
-```
-python3 -m venv .venv
-.venv/bin/pip install -r requirements-dev.txt
-.venv/bin/pytest sediment/skills/friction-miner/scripts/tests/ -v
-```
-
-The `friction-judge` subagent dispatch and the apply step (Edit + user
-confirmation) both require a live interactive session and can't be
-unit-tested outside one — verify those manually with a `--dev` run before
-a release.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, test commands, and PR
+conventions.
 
 ## Architecture
 
